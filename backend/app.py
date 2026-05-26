@@ -6,8 +6,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import os
 from database import (
     save_message, get_chat_history, get_all_sessions, delete_session,
     save_2fa_code, verify_2fa_code, verify_2fa_code_only, create_admin_session,
@@ -779,6 +780,20 @@ def create_reservation():
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
+
+
+# Serve frontend static files
+FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "titan-dental-connect-main", "dist")
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_frontend(path):
+    if path.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
+    frontend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "titan-dental-connect-main", "dist")
+    if path and os.path.exists(os.path.join(frontend_path, path)):
+        return send_from_directory(frontend_path, path)
+    return send_from_directory(frontend_path, "index.html")
 
 
 if __name__ == "__main__":

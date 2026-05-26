@@ -1,23 +1,16 @@
 services:
   - type: web
-    name: titandent-backend
+    name: titandent
     env: python
     rootDir: ./backend
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      npm install
+      cd ../titan-dental-connect-main && npm run build
     startCommand: python -m gunicorn --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: RESEND_API_KEY
         sync: false
       - key: SMTP_APP_PASSWORD
         sync: false
-
-  - type: static
-    name: titandent-frontend
-    rootDir: ./titan-dental-connect-main
-    plan: free
-    buildCommand: npm install && npm run build
-    publishDirectory: ./dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://titandent.onrender.com
