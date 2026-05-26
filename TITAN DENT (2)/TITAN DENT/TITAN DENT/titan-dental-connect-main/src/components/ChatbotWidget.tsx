@@ -81,6 +81,31 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
     it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
   },
+  orare: {
+    al: (c) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
+  },
+  oraret: {
+    al: (c) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
+  },
+  punes: {
+    al: (c) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
+  },
+  ndodhet: {
+    al: (c) => `📍 **Adresa:**\n${c.address}`,
+    en: (c) => `📍 **Address:**\n${c.address}`,
+    it: (c) => `📍 **Indirizzo:**\n${c.address}`,
+  },
+  klinika: {
+    al: (c) => `📍 **Adresa:**\n${c.address}`,
+    en: (c) => `📍 **Address:**\n${c.address}`,
+    it: (c) => `📍 **Indirizzo:**\n${c.address}`,
+  },
   kontakto: {
     al: (c) => `📞 **Kontakti:**\nTel: ${c.phone}\nEmail: info@titandental.com\nAdresa: ${c.address}`,
     en: (c) => `📞 **Contact:**\nPhone: ${c.phone}\nEmail: info@titandental.com\nAddress: ${c.address}`,
@@ -142,6 +167,11 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     it: (c) => `💰 **Prezzi:**\nI prezzi variano in base al trattamento. Chiamaci per una consultazione gratuita: ${c.phone}`,
   },
   sherbime: {
+    al: (c) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+  },
+  ofroni: {
     al: (c) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,

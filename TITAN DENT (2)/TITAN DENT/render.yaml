@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: backend
+    env: python
+    rootDir: ./backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: RESEND_API_KEY
+        sync: false
+
+  - type: static
+    name: frontend
+    rootDir: ./titan-dental-connect-main
+    plan: free
+    buildCommand: npm install && npm run build
+    publishDirectory: ./dist
