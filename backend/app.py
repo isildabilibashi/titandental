@@ -782,18 +782,19 @@ def health():
     return jsonify({"status": "ok"})
 
 
-# Serve frontend static files
-FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "titan-dental-connect-main", "dist")
-
+# Serve frontend static files (React SPA)
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_frontend(path):
     if path.startswith("api/"):
         return jsonify({"error": "Not found"}), 404
-    frontend_path = FRONTEND_BUILD_DIR
-    if path and os.path.exists(os.path.join(frontend_path, path)):
-        return send_from_directory(frontend_path, path)
-    return send_from_directory(frontend_path, "index.html")
+    frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "titan-dental-connect-main", "dist")
+    try:
+        if path == "":
+            return send_from_directory(frontend_dir, "index.html")
+        return send_from_directory(frontend_dir, path)
+    except:
+        return send_from_directory(frontend_dir, "index.html")
 
 
 if __name__ == "__main__":
