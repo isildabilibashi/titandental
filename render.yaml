@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: backend
+    name: titandent-backend
     env: python
     rootDir: ./backend
     plan: free
@@ -11,7 +11,7 @@ services:
         sync: false
 
   - type: static
-    name: frontend
+    name: titandent-frontend
     rootDir: ./titan-dental-connect-main
     plan: free
     buildCommand: npm install && npm run build
