@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
 
+const API_BASE = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
+
 const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +58,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/login`, {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -92,7 +94,7 @@ const AdminLogin = () => {
      setLoading(true);
 
      try {
-       const res = await fetch(`/api/admin/verify`, {
+       const res = await fetch(`${API_BASE}/api/admin/verify`, {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({ code: verificationCode }),
@@ -164,7 +166,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/reset-password`, {
+      const res = await fetch(`${API_BASE}/api/admin/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: verificationCode, new_password: newPassword }),
@@ -201,7 +203,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/login`, {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: forgotUsername, password: "RESET_PASSWORD", email: forgotEmail }),

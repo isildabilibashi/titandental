@@ -14,7 +14,7 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-const API_URL = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
 
 const ReservationSection = () => {
   const [date, setDate] = useState<Date | undefined>();

@@ -37,16 +37,18 @@ const statusStyles: Record<string, string> = {
 type TimeFilter = "all" | "past" | "today" | "upcoming";
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
  
+const API_BASE = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
+
 const Admin = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [reservationsDate, setReservationsDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [scheduleDate, setScheduleDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [scheduleView, setScheduleView] = useState<"list" | "schedule">("schedule");
-  const [activeTab, setActiveTab] = useState<"home" | "reservations" | "add" | "today">("home");
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
-  const [todayStats, setTodayStats] = useState({ total: 0, pending: 0, approved: 0 });
+   const [reservations, setReservations] = useState<Reservation[]>([]);
+   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+   const [reservationsDate, setReservationsDate] = useState<string>(new Date().toISOString().split("T")[0]);
+   const [scheduleDate, setScheduleDate] = useState<string>(new Date().toISOString().split("T")[0]);
+   const [scheduleView, setScheduleView] = useState<"list" | "schedule">("schedule");
+   const [activeTab, setActiveTab] = useState<"home" | "reservations" | "add" | "today">("home");
+   const [loading, setLoading] = useState(true);
+   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+   const [todayStats, setTodayStats] = useState({ total: 0, pending: 0, approved: 0 });
 
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -83,7 +85,7 @@ const Admin = () => {
   const fetchReservations = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "list" }),
@@ -108,7 +110,7 @@ const Admin = () => {
   const fetchStats = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "stats" }),
@@ -131,7 +133,7 @@ const Admin = () => {
   const fetchTodayStats = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "today_stats" }),
@@ -159,7 +161,7 @@ const Admin = () => {
 
     const validateSession = async () => {
       try {
-        const res = await fetch(`/api/admin/validate`, {
+        const res = await fetch(`${API_BASE}/api/admin/validate`, {
           method: "POST",
           headers: adminHeaders,
         });
@@ -196,7 +198,7 @@ const Admin = () => {
 
     const refreshInterval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/admin/refresh`, {
+        const res = await fetch(`${API_BASE}/api/admin/refresh`, {
           method: "POST",
           headers: adminHeaders,
         });
@@ -242,7 +244,7 @@ const Admin = () => {
     setProcessingId(id);
     toast({ title: status === "approved" ? "Duke konfirmuar..." : "Duke refuzuar...", description: "Duke dërguar email..." });
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "update_status", id, status }),
@@ -267,7 +269,7 @@ const Admin = () => {
     if (!confirm("Are you sure you want to delete this reservation? This action cannot be undone.")) return;
     setDeletingId(id);
     try {
-      await fetch(`/api/admin/reservations`, {
+      await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "delete", id }),
@@ -287,7 +289,7 @@ const Admin = () => {
     if (!editingReservation) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({
@@ -316,12 +318,12 @@ const Admin = () => {
     }
   };
  
-  const handleLogout = async () => {
-    try {
-      await fetch(`/api/admin/logout`, {
-        method: "POST",
-        headers: adminHeaders,
-      });
+const handleLogout = async () => {
+     try {
+       await fetch(`${API_BASE}/api/admin/logout`, {
+         method: "POST",
+         headers: adminHeaders,
+       });
     } catch {
       // Logout anyway even if API call fails
     }
@@ -336,7 +338,7 @@ const Admin = () => {
     }
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/reservations`, {
+      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
         method: "POST",
         headers: adminHeaders,
         body: JSON.stringify({ action: "create", ...newReservation, status: "approved" }),
@@ -1170,7 +1172,7 @@ const Admin = () => {
                     if (!editingReservation) return;
                     setSubmitting(true);
                     try {
-                      const res = await fetch(`/api/admin/reservations`, {
+                      const res = await fetch(`${API_BASE}/api/admin/reservations`, {
                         method: "POST",
                         headers: adminHeaders,
                         body: JSON.stringify({
