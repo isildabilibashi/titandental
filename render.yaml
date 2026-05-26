@@ -18,3 +18,6 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     publishDirectory: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://titandent-backend.onrender.com
