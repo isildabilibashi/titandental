@@ -26,12 +26,12 @@ ADMIN_EMAIL = "clinictitandental@gmail.com"
 SESSION_TTL_MINUTES = 720  # 12 hours
 CODE_TTL_MINUTES = 10
 
-resend.api_key = os.environ.get("RESEND_API_KEY", "re_JUDGqhto_8QbZijzhYpXrfB6t8wfHhw6r")
+resend.api_key = os.environ.get("RESEND_API_KEY")
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "clinictitandental@gmail.com"
-SMTP_APP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD", "kxrmabctcmgpxigz")
+SMTP_APP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD")
 
 CLINIC_INFO = {
     "name": "TITAN DENT",
