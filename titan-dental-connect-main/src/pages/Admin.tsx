@@ -37,7 +37,7 @@ const statusStyles: Record<string, string> = {
 type TimeFilter = "all" | "past" | "today" | "upcoming";
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
  
-const API_BASE = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://titandent.onrender.com";
 
 const Admin = () => {
    const [reservations, setReservations] = useState<Reservation[]>([]);

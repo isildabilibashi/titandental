@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://titandent.onrender.com";
 
   try {
        const res = await fetch(`${API_BASE}/api/admin/validate`, {

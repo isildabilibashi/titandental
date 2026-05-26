@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://titandent-backend.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://titandent.onrender.com";
 
 const AdminLogin = () => {
   const [username, setUsername] = useState("");
