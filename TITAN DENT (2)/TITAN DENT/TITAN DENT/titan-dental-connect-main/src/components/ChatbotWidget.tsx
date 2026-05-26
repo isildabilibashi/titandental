@@ -121,6 +121,11 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     en: (c) => `📍 **Address:**\n${c.address}`,
     it: (c) => `📍 **Indirizzo:**\n${c.address}`,
   },
+  clinic: {
+    al: (c) => `📍 **Adresa:**\n${c.address}`,
+    en: (c) => `📍 **Address:**\n${c.address}`,
+    it: (c) => `📍 **Indirizzo:**\n${c.address}`,
+  },
   prenotare: {
     al: (c) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
     en: (c) => `📋 **Booking:**\nTo book an appointment, fill the form in the "Book Online" section on the website. Or call: ${c.phone}`,
@@ -211,7 +216,17 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   },
-  servizi: {
+servizi: {
+    al: (c) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+  },
+  offer: {
+    al: (c) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+  },
+  offrite: {
     al: (c) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     en: (c) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     it: (c) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
@@ -256,7 +271,7 @@ const ChatbotWidget = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const API_URL = `${supabase.supabaseUrl}/functions/v1/dental-chat`;
+  const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dental-chat`;
 
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
