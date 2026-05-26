@@ -32,3 +32,6 @@ dist-ssr
 *.db
 *.sqlite
 *.sqlite3
+
+# Supabase temp
+supabase/.temp/
