@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    const expirationTime = new Date(expiresAt).getTime();
+const expirationTime = new Date(expiresAt).getTime();
     const currentTime = Date.now();
 
     if (currentTime > expirationTime) {
@@ -34,10 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://titandent.onrender.com";
-
-  try {
-       const res = await fetch(`${API_BASE}/api/admin/validate`, {
+    try {
+        const res = await fetch(`/api/admin/validate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

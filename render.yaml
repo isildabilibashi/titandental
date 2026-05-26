@@ -2,13 +2,12 @@ services:
   - type: web
     name: titandent
     env: python
-    rootDir: ./backend
     plan: free
     buildCommand: |
-      pip install -r requirements.txt
+      pip install -r backend/requirements.txt
       npm install
-      cd ../titan-dental-connect-main && npm run build
-    startCommand: python -m gunicorn --bind 0.0.0.0:$PORT app:app
+      cd titan-dental-connect-main && npm run build
+    startCommand: python -m gunicorn --bind 0.0.0.0:$PORT backend.app:app
     envVars:
       - key: RESEND_API_KEY
         sync: false

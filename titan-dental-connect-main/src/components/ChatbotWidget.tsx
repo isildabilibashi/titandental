@@ -270,7 +270,7 @@ const ChatbotWidget = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-const API_URL = import.meta.env.VITE_API_URL || "https://titandent.onrender.com/api/chat";
+const API_URL = "/api/chat";
 
    const send = async (text: string) => {
      if (!text.trim() || isLoading) return;
