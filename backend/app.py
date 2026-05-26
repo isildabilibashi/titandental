@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os
 from database import (
     save_message, get_chat_history, get_all_sessions, delete_session,
     save_2fa_code, verify_2fa_code, verify_2fa_code_only, create_admin_session,
