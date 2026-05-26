@@ -73,10 +73,20 @@ const KEYWORD_RESPONSES = {
     en: (c: typeof CLINIC_INFO) => `📍 **Address:**\n${c.address}`,
     it: (c: typeof CLINIC_INFO) => `📍 **Indirizzo:**\n${c.address}`,
   },
-  indirizzo: {
+indirizzo: {
     al: (c: typeof CLINIC_INFO) => `📍 **Adresa:**\n${c.address}`,
     en: (c: typeof CLINIC_INFO) => `📍 **Address:**\n${c.address}`,
     it: (c: typeof CLINIC_INFO) => `📍 **Indirizzo:**\n${c.address}`,
+  },
+  prenotare: {
+    al: (c: typeof CLINIC_INFO) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
+    en: (c: typeof CLINIC_INFO) => `📋 **Booking:**\nTo book an appointment, fill the form in the "Book Online" section on the website. Or call: ${c.phone}`,
+    it: (c: typeof CLINIC_INFO) => `📋 **Prenotazione:**\nPer prenotare, compila il modulo nella sezione "Prenota Online" sul sito. O chiama: ${c.phone}`,
+  },
+  vostri: {
+    al: (c: typeof CLINIC_INFO) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c: typeof CLINIC_INFO) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c: typeof CLINIC_INFO) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
   },
   rezervo: {
     al: (c: typeof CLINIC_INFO) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
@@ -128,20 +138,20 @@ const KEYWORD_RESPONSES = {
     en: (c: typeof CLINIC_INFO) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     it: (c: typeof CLINIC_INFO) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   },
-  staff: {
+staff: {
     al: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Stafi:**\n${c.staff.al}\n\n${c.experience.al}`,
     en: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.en}\n\n${c.experience.en}`,
     it: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.it}\n\n${c.experience.it}`,
   },
-  ekipi: {
-    al: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Stafi:**\n${c.staff.al}\n\n${c.experience.al}`,
-    en: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.en}\n\n${c.experience.en}`,
-    it: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.it}\n\n${c.experience.it}`,
+  offer: {
+    al: (c: typeof CLINIC_INFO) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    en: (c: typeof CLINIC_INFO) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    it: (c: typeof CLINIC_INFO) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   },
-  equipe: {
-    al: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Stafi:**\n${c.staff.al}\n\n${c.experience.al}`,
-    en: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.en}\n\n${c.experience.en}`,
-    it: (c: typeof CLINIC_INFO) => `👨‍⚕️ **Staff:**\n${c.staff.it}\n\n${c.experience.it}`,
+  offrite: {
+    al: (c: typeof CLINIC_INFO) => `🦷 **Shërbimet:**\n${c.services.al.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    en: (c: typeof CLINIC_INFO) => `🦷 **Services:**\n${c.services.en.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    it: (c: typeof CLINIC_INFO) => `🦷 **Servizi:**\n${c.services.it.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
   },
 };
 
@@ -191,7 +201,7 @@ ${c.services[lang].map((s, i) => `${i + 1}. ${s}`).join("\n")}
 - ${lang === "al" ? "Mbaj përgjigjet koncize dhe të qarta" : lang === "en" ? "Keep responses concise and clear" : "Mantieni le risposte concise e chiare"}`;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -253,7 +263,7 @@ serve(async (req) => {
       });
     }
 
-    const data = await response.json();
+    const data = await response.json() as { choices?: { message?: { content?: string } }[] };
     const content = data.choices?.[0]?.message?.content || "";
     return new Response(JSON.stringify({ choices: [{ message: { content } }] }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
