@@ -209,8 +209,8 @@ serve(async (req) => {
 
     if (keyword && KEYWORD_RESPONSES[keyword as keyof typeof KEYWORD_RESPONSES]) {
       const responseFn = KEYWORD_RESPONSES[keyword as keyof typeof KEYWORD_RESPONSES][lang];
-      return new Response(responseFn(CLINIC_INFO), {
-        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      return new Response(JSON.stringify({ choices: [{ message: { content: responseFn(CLINIC_INFO) } }] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

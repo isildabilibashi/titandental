@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Globe } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "bot";
@@ -48,8 +49,6 @@ const languages = [
   { code: "it", label: "IT", name: "Italiano" },
 ] as const;
 
-const API_URL = "http://localhost:5000";
-
 const ChatbotWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>("al");
@@ -67,6 +66,8 @@ const ChatbotWidget = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const API_URL = `${supabase.supabaseUrl}/functions/v1/dental-chat`;
+
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
     const userMsg = { role: "user" as const, text };
@@ -74,17 +75,27 @@ const ChatbotWidget = () => {
     setInput("");
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/chat`, {
+      const messageHistory = messages.map(m => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text
+      }));
+      messageHistory.push({ role: "user", content: text });
+      
+      const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, language }),
+        headers: { 
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ messages: messageHistory, language }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "Request failed");
       }
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "bot", text: data.response || "Nuk mora një përgjigje." }]);
+      const botText = data.choices?.[0]?.message?.content || "Nuk mora një përgjigje.";
+      setMessages((prev) => [...prev, { role: "bot", text: botText }]);
     } catch {
       setMessages((prev) => [
         ...prev,
