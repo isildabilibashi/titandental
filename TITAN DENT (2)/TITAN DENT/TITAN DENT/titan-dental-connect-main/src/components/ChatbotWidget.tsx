@@ -106,6 +106,31 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     en: (c) => `📍 **Address:**\n${c.address}`,
     it: (c) => `📍 **Indirizzo:**\n${c.address}`,
   },
+  hours: {
+    al: (c) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
+  },
+  located: {
+    al: (c) => `📍 **Adresa:**\n${c.address}`,
+    en: (c) => `📍 **Address:**\n${c.address}`,
+    it: (c) => `📍 **Indirizzo:**\n${c.address}`,
+  },
+  clinica: {
+    al: (c) => `📍 **Adresa:**\n${c.address}`,
+    en: (c) => `📍 **Address:**\n${c.address}`,
+    it: (c) => `📍 **Indirizzo:**\n${c.address}`,
+  },
+  prenotare: {
+    al: (c) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
+    en: (c) => `📋 **Booking:**\nTo book an appointment, fill the form in the "Book Online" section on the website. Or call: ${c.phone}`,
+    it: (c) => `📋 **Prenotazione:**\nPer prenotare, compila il modulo nella sezione "Prenota Online" sul sito. O chiama: ${c.phone}`,
+  },
+  vostri: {
+    al: (c) => `📅 **Orari i klinikës:**\n${c.schedule.al}\n\nTelefono për informacion: ${c.phone}`,
+    en: (c) => `📅 **Clinic Hours:**\n${c.schedule.en}\n\nCall for info: ${c.phone}`,
+    it: (c) => `📅 **Orari della clinica:**\n${c.schedule.it}\n\nChiama per informazioni: ${c.phone}`,
+  },
   kontakto: {
     al: (c) => `📞 **Kontakti:**\nTel: ${c.phone}\nEmail: info@titandental.com\nAdresa: ${c.address}`,
     en: (c) => `📞 **Contact:**\nPhone: ${c.phone}\nEmail: info@titandental.com\nAddress: ${c.address}`,
