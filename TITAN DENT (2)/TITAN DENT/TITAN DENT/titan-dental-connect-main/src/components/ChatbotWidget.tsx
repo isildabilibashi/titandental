@@ -161,7 +161,12 @@ const KEYWORD_RESPONSES: Record<string, Record<string, (c: typeof CLINIC_INFO) =
     en: (c) => `📍 **Address:**\n${c.address}`,
     it: (c) => `📍 **Indirizzo:**\n${c.address}`,
   },
-  rezervo: {
+   rezervo: {
+    al: (c) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
+    en: (c) => `📋 **Booking:**\nTo book an appointment, fill the form in the "Book Online" section on the website. Or call: ${c.phone}`,
+    it: (c) => `📋 **Prenotazione:**\nPer prenotare, compila il modulo nella sezione "Prenota Online" sul sito. O chiama: ${c.phone}`,
+  },
+  rezerv: {
     al: (c) => `📋 **Rezervim:**\nPër të bërë rezervim, plotëso formularin në seksionin "Rezervo Online" në website. Ose telefono: ${c.phone}`,
     en: (c) => `📋 **Booking:**\nTo book an appointment, fill the form in the "Book Online" section on the website. Or call: ${c.phone}`,
     it: (c) => `📋 **Prenotazione:**\nPer prenotare, compila il modulo nella sezione "Prenota Online" sul sito. O chiama: ${c.phone}`,
