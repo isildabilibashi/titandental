@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+chat_history.db
+venv/
+.env

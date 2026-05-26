@@ -1,0 +1,726 @@
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calendar as CalendarIcon, Clock, User, Phone, Mail, LogOut, Check, X,
+  Printer, Download, ChevronRight, Loader2, AlertCircle, Trash2, Filter, Radio,
+  Plus, MessageSquare, BarChart3, Send, CalendarDays
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+const API_URL = "http://127.0.0.1:5000";
+
+const timeSlots = [
+  "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
+  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"
+];
+
+interface Reservation {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  date: string;
+  time: string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+}
+
+const statusStyles: Record<string, string> = {
+  approved: "bg-emerald-500 text-emerald-400 border-emerald-500",
+  pending: "bg-amber-500 text-amber-400 border-amber-500",
+  rejected: "bg-red-500 text-red-400 border-red-500",
+};
+
+type TimeFilter = "all" | "past" | "today" | "upcoming";
+type StatusFilter = "all" | "pending" | "approved" | "rejected";
+
+const Admin = () => {
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [reservationsDate, setReservationsDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [activeTab, setActiveTab] = useState<"home" | "reservations" | "add" | "today">("home");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+  const [todayStats, setTodayStats] = useState({ total: 0, pending: 0, approved: 0 });
+
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [live, setLive] = useState(true);
+  const [newReservation, setNewReservation] = useState({ name: "", phone: "", email: "", date: "", time: "", notes: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const token = sessionStorage.getItem("admin_token");
+
+  const adminHeaders = {
+    "Content-Type": "application/json",
+    "x-admin-token": token || "",
+  };
+
+  const fetchReservations = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "list" }),
+      });
+      const data = await res.json();
+      if (data?.data) setReservations(data.data);
+    } catch {
+      toast({ title: "Error", description: "Could not load reservations", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [token, toast]);
+
+  const fetchStats = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "stats" }),
+      });
+      const data = await res.json();
+      if (data?.data) setStats(data.data);
+    } catch { /* stats fetch failed */ }
+  }, [token]);
+
+  const fetchTodayStats = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "today_stats" }),
+      });
+      const data = await res.json();
+      if (data?.data) setTodayStats(data.data);
+    } catch { /* today stats fetch failed */ }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      navigate("/admin/login");
+      return;
+    }
+
+    const validateSession = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/validate`, {
+          method: "POST",
+          headers: adminHeaders,
+        });
+        const data = await res.json();
+        if (!data?.valid) {
+          sessionStorage.removeItem("admin_token");
+          setLoading(false);
+          navigate("/admin/login");
+        } else {
+          fetchReservations();
+          fetchStats();
+          fetchTodayStats();
+        }
+      } catch {
+        sessionStorage.removeItem("admin_token");
+        setLoading(false);
+        navigate("/admin/login");
+      }
+    };
+
+    validateSession();
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/refresh`, {
+          method: "POST",
+          headers: adminHeaders,
+        });
+        const data = await res.json();
+        if (!data?.success) {
+          sessionStorage.removeItem("admin_token");
+          navigate("/admin/login");
+          toast({ title: "Sesioni ka skaduar", description: "Ju lutem hyni perseri.", variant: "destructive" });
+        }
+      } catch {
+        sessionStorage.removeItem("admin_token");
+        navigate("/admin/login");
+      }
+    }, 10 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
+  }, [token, navigate, fetchReservations, fetchStats, toast]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    // Poll for updates every 5 seconds instead of realtime
+    const pollInterval = setInterval(() => {
+      fetchReservations();
+      fetchStats();
+      fetchTodayStats();
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [token, fetchReservations, fetchStats]);
+
+  const handleStatusChange = async (id: string, status: "approved" | "rejected") => {
+    setProcessingId(id);
+    toast({ title: status === "approved" ? "Duke konfirmuar..." : "Duke refuzuar...", description: "Duke dërguar email..." });
+    try {
+      await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "update_status", id, status }),
+      });
+      toast({ title: status === "approved" ? "Konfirmuar" : "Refuzuar", description: status === "approved" ? "Rezervimi u konfirmua dhe email-i u dërgua." : "Rezervimi u refuzua." });
+    } catch {
+      toast({ title: "Error", description: "Could not update reservation", variant: "destructive" });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this reservation? This action cannot be undone.")) return;
+    setDeletingId(id);
+    try {
+      await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      toast({ title: "Fshirë", description: "Reservation deleted successfully" });
+    } catch {
+      toast({ title: "Error", description: "Could not delete reservation", variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch(`${API_URL}/api/admin/logout`, {
+      method: "POST",
+      headers: adminHeaders,
+    });
+    sessionStorage.removeItem("admin_token");
+    navigate("/admin/login");
+  };
+
+  const handleCreateReservation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReservation.name || !newReservation.phone || !newReservation.date || !newReservation.time) {
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reservations`, {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({ action: "create", ...newReservation }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Sukses", description: "Rezervimi u krijua me sukses" });
+        setNewReservation({ name: "", phone: "", email: "", date: "", time: "", notes: "" });
+        fetchReservations();
+        fetchStats();
+        fetchTodayStats();
+      } else {
+        toast({ title: "Error", description: data.message || "Failed to create reservation", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not create reservation", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePrint = () => window.print();
+
+  const handleDownload = (period: "day" | "month" | "year") => {
+    let filtered = reservations.filter((r) => r.status === "approved");
+    const now = new Date();
+
+    if (period === "day") {
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      filtered = filtered.filter((r) => r.date === dateStr);
+    } else if (period === "month") {
+      filtered = filtered.filter((r) => {
+        const d = new Date(r.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+    } else {
+      filtered = filtered.filter((r) => new Date(r.date).getFullYear() === now.getFullYear());
+    }
+
+    const csv = [
+      "Name,Phone,Email,Date,Time,Status",
+      ...filtered.map((r) => `"${r.name}","${r.phone}","${r.email}","${r.date}","${r.time}","${r.status}"`),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reservations-${period}-${now.toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const getFilteredReservations = () => {
+    let filtered = [...reservations];
+
+    if (timeFilter !== "all") {
+      filtered = filtered.filter((r) => {
+        if (timeFilter === "past") return r.date < todayStr;
+        if (timeFilter === "today") return r.date === todayStr;
+        if (timeFilter === "upcoming") return r.date > todayStr;
+        return true;
+      });
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((r) => r.status === statusFilter);
+    }
+
+    return filtered.sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+  };
+
+  const dateStr = selectedDate.toISOString().split("T")[0];
+  const pendingReservations = reservations.filter((r) => r.status === "pending");
+  const confirmedForDate = reservations.filter((r) => r.status === "approved" && r.date === dateStr);
+  const urgentReservations = pendingReservations.filter((r) => {
+    const resDate = new Date(r.date);
+    const diffDays = (resDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 1;
+  });
+
+  const approvedDates = reservations
+    .filter((r) => r.status === "approved")
+    .map((r) => new Date(r.date + "T00:00:00"));
+
+  const filteredList = getFilteredReservations();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background print:bg-white">
+      <header className="bg-secondary border-b border-gold print:hidden">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="font-display text-2xl text-primary-foreground">
+                TITAN <span className="text-gold">ADMIN</span>
+              </h1>
+              <p className="text-sm text-muted-foreground">Reservation Management</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className={cn("flex items-center gap-2 text-sm", live ? "text-emerald-400" : "text-amber-400")}>
+                <Radio className={cn("w-4 h-4", live && "animate-pulse")} />
+                {live ? "Live" : "Connecting..."}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarIcon className="w-4 h-4 text-gold" />
+                {new Date().toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-red-400 transition-colors px-3 py-2 rounded-lg border border-border hover:border-red-400"
+              >
+                <LogOut className="w-4 h-4" />
+                Log Out
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "home" as const, label: "Home", count: 0 },
+              { key: "reservations" as const, label: "All Reservations", count: pendingReservations.length },
+              { key: "add" as const, label: "Add New", count: 0 },
+              { key: "today" as const, label: "Today", count: todayStats.total },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all border",
+                  activeTab === tab.key
+                    ? "gradient-gold text-secondary border-gold"
+                    : "bg-card text-muted-foreground border-border hover:border-gold"
+                )}
+              >
+                {tab.label} {tab.count > 0 && `(${tab.count})`}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-6 py-6">
+
+        {activeTab !== "home" && (
+        <div className="flex flex-wrap items-center gap-3 mb-6 print:hidden">
+          <button onClick={handlePrint} className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border bg-card text-foreground hover:border-gold transition-colors">
+            <Printer className="w-4 h-4" /> Print
+          </button>
+          <span className="text-sm text-muted-foreground">Download Report:</span>
+          {(["day", "month", "year"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => handleDownload(p)}
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-border bg-card text-foreground hover:border-gold transition-colors capitalize"
+            >
+              <Download className="w-3.5 h-3.5" /> {p}
+            </button>
+          ))}
+        </div>
+        )}
+
+            {activeTab === "home" && (
+              <div className="space-y-6">
+                {/* Urgent Reservations */}
+                {urgentReservations.length > 0 && (
+                  <div className="bg-red-500 border-2 border-red-500 rounded-xl p-5">
+                    <h3 className="font-display text-lg text-red-400 mb-4 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      Urgjencat ({urgentReservations.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {urgentReservations.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((r) => (
+                        <div key={r.id} className="bg-card border border-red-500 rounded-lg p-4 flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-4 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-red-400 font-semibold text-sm shrink-0">
+                              {r.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground truncate">{r.name}</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{r.phone}</span>
+                              </div>
+                              <div className="flex items-center gap-3 mt-2 text-sm">
+                                <span className="flex items-center gap-1 text-red-400">
+                                  <CalendarIcon className="w-3 h-3" />
+                                  {new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                                <span className="flex items-center gap-1 text-foreground font-medium">
+                                  <Clock className="w-3 h-3" />{r.time}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleStatusChange(r.id, "approved")}
+                              disabled={processingId === r.id}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-emerald-400 border border-emerald-500 hover:bg-emerald-500 transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              <Check className="w-4 h-4" /> Konfirmo
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(r.id, "rejected")}
+                              disabled={processingId === r.id}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500 text-red-400 border border-red-500 hover:bg-red-500 transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              <X className="w-4 h-4" /> Refuzo
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pending Reservations */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="font-display text-lg text-foreground mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-gold" />
+                    Rezervimet e Penduara ({pendingReservations.length})
+                  </h3>
+                  {pendingReservations.length === 0 ? (
+                    <p className="text-muted-foreground">Nuk ka rezervime të panduara.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingReservations.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((r) => (
+                        <div key={r.id} className="bg-white border border-border rounded-lg p-4 flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-4 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold text-sm shrink-0">
+                              {r.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground truncate">{r.name}</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{r.phone}</span>
+                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{r.email}</span>
+                              </div>
+                              <div className="flex items-center gap-3 mt-2 text-sm">
+                                <span className="flex items-center gap-1 text-gold">
+                                  <CalendarIcon className="w-3 h-3" />
+                                  {new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                                <span className="flex items-center gap-1 text-foreground font-medium">
+                                  <Clock className="w-3 h-3" />{r.time}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleStatusChange(r.id, "approved")}
+                              disabled={processingId === r.id}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-emerald-400 border border-emerald-500 hover:bg-emerald-500 transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              <Check className="w-4 h-4" /> Konfirmo
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(r.id, "rejected")}
+                              disabled={processingId === r.id}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500 text-red-400 border border-red-500 hover:bg-red-500 transition-colors text-sm font-medium disabled:opacity-50"
+                            >
+                              <X className="w-4 h-4" /> Refuzo
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "reservations" && (
+                <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Total", value: stats.total, color: "text-gold" },
+                    { label: "Pending", value: stats.pending, color: "text-amber-400" },
+                    { label: "Approved", value: stats.approved, color: "text-emerald-400" },
+                    { label: "Rejected", value: stats.rejected, color: "text-red-400" },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-card border border-border rounded-xl p-4">
+                      <p className="text-sm text-muted-foreground">{s.label}</p>
+                      <p className={`text-3xl font-display ${s.color}`}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 print:hidden">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Filter className="w-4 h-4" />
+                    Data:
+                  </div>
+                  <input
+                    type="date"
+                    value={reservationsDate}
+                    onChange={(e) => setReservationsDate(e.target.value)}
+                    className="text-sm px-3 py-1.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-gold"
+                  />
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <h3 className="font-display text-lg text-foreground mb-4">
+                    {new Date(reservationsDate).toLocaleDateString("sq-AL", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Ora</th>
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Emri</th>
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Telefoni</th>
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Email</th>
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Status</th>
+                          <th className="text-left py-2 px-2 font-medium text-muted-foreground">Veprimet</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSlots.map((time) => {
+                          const reservation = reservations.find(r => r.date === reservationsDate && r.time === time);
+                          return (
+                            <tr key={time} className="border-b border-border">
+                              <td className="py-2 px-2 font-mono text-gold">{time}</td>
+                              {reservation ? (
+                                <>
+                                  <td className="py-2 px-2">{reservation.name}</td>
+                                  <td className="py-2 px-2 text-muted-foreground">{reservation.phone}</td>
+                                  <td className="py-2 px-2 text-muted-foreground">{reservation.email}</td>
+                                  <td className="py-2 px-2">
+                                    <Badge variant="outline" className={statusStyles[reservation.status] || ""}>
+                                      {reservation.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    {reservation.status === "pending" && (
+                                      <div className="flex gap-1">
+                                        <button
+                                          title="Approve"
+                                          onClick={() => handleStatusChange(reservation.id, "approved")}
+                                          disabled={processingId === reservation.id}
+                                          className="p-1.5 rounded bg-emerald-500 text-emerald-400 hover:bg-emerald-500"
+                                        >
+                                          <Check className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          title="Reject"
+                                          onClick={() => handleStatusChange(reservation.id, "rejected")}
+                                          disabled={processingId === reservation.id}
+                                          className="p-1.5 rounded bg-red-500 text-red-400 hover:bg-red-500"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                </>
+                              ) : (
+                                <td colSpan={5} className="py-2 px-2 text-muted-foreground italic">i lirë</td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "add" && (
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h3 className="font-display text-lg text-foreground mb-4 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-gold" />
+                  Shto Rezervim te Ri
+                </h3>
+                <form onSubmit={handleCreateReservation} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="name" className="block text-sm text-muted-foreground mb-1">Emri *</label>
+                      <input
+                        id="name"
+                        type="text"
+                        value={newReservation.name}
+                        onChange={(e) => setNewReservation({ ...newReservation, name: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="phone" className="block text-sm text-muted-foreground mb-1">Telefoni *</label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        value={newReservation.phone}
+                        onChange={(e) => setNewReservation({ ...newReservation, phone: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="email" className="block text-sm text-muted-foreground mb-1">Email</label>
+                      <input
+                        id="email"
+                        type="email"
+                        value={newReservation.email}
+                        onChange={(e) => setNewReservation({ ...newReservation, email: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="date" className="block text-sm text-muted-foreground mb-1">Data *</label>
+                      <input
+                        id="date"
+                        type="date"
+                        value={newReservation.date}
+                        onChange={(e) => setNewReservation({ ...newReservation, date: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="time" className="block text-sm text-muted-foreground mb-1">Ora *</label>
+                      <input
+                        id="time"
+                        type="time"
+                        value={newReservation.time}
+                        onChange={(e) => setNewReservation({ ...newReservation, time: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="notes" className="block text-sm text-muted-foreground mb-1">Shënime</label>
+                    <textarea
+                      id="notes"
+                      value={newReservation.notes}
+                      onChange={(e) => setNewReservation({ ...newReservation, notes: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:border-gold"
+                      rows={3}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-lg gradient-gold text-secondary font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {submitting ? "Duke dërguar..." : "Krijo Rezervim"}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {activeTab === "today" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Totale</p>
+                    <p className="text-3xl font-display text-gold">{todayStats.total}</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Pending</p>
+                    <p className="text-3xl font-display text-amber-400">{todayStats.pending}</p>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Approved</p>
+                    <p className="text-3xl font-display text-emerald-400">{todayStats.approved}</p>
+                  </div>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-6">
+                  <h4 className="font-display text-lg text-foreground mb-4 flex items-center gap-2">
+                    <CalendarDays className="w-5 h-5 text-gold" />
+                    Rezervimet e Sotme
+                  </h4>
+                  <div className="space-y-3">
+
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Admin;
